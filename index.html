@@ -5,108 +5,176 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>150-Hour OJT Tracker</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
-        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
-        h2 { text-align: center; color: #1a73e8; margin-bottom: 10px; }
-        .progress-box { background: #e8f0fe; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
-        .progress-bar-bg { background: #ddd; border-radius: 10px; height: 12px; margin: 10px 0; overflow: hidden; }
-        .progress-fill { background: #34a853; height: 100%; width: 0%; transition: 0.5s; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
-        .input-field { flex: 1; display: flex; flex-direction: column; font-size: 0.8rem; }
-        input { padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
-        button { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 5px; }
-        .projection { font-size: 0.9rem; color: #5f6368; background: #fff3e0; padding: 10px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #ff9800; }
-        .log { margin-top: 20px; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
-        .log-item { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 5px 0; border-bottom: 1px solid #fafafa; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
+        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 100%; max-width: 480px; }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-card { background: #ebf5fb; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #d4e6f1; }
+        .stat-card span { display: block; font-size: 1.4rem; font-weight: bold; color: #2980b9; }
+
+        .progress-container { background: #eee; border-radius: 20px; height: 15px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar { background: #27ae60; height: 100%; width: 0%; transition: width 0.5s ease; }
+
+        .input-section { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee; }
+        .form-row { margin-bottom: 12px; display: flex; flex-direction: column; }
+        label { font-size: 0.85rem; font-weight: bold; color: #7f8c8d; margin-bottom: 4px; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; }
+        
+        button { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #2980b9; }
+
+        .projection-alert { background: #fef9e7; border-left: 5px solid #f1c40f; padding: 12px; border-radius: 4px; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.4; }
+        
+        .history-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .history-table th { text-align: left; padding: 8px; background: #f2f2f2; border-bottom: 2px solid #ddd; }
+        .history-table td { padding: 8px; border-bottom: 1px solid #eee; }
+        .history-container { max-height: 250px; overflow-y: auto; }
+        
+        .clear-btn { background: #e74c3c; font-size: 0.75rem; margin-top: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>150-Hour Tracker</h2>
-    
-    <div class="progress-box">
-        <div><strong>Total Rendered:</strong> <span id="total-hrs">0</span> / 150 hrs</div>
-        <div class="progress-bar-bg"><div id="progress-fill" class="progress-fill"></div></div>
-        <div id="remaining-text">Remaining: 150 hours</div>
+    <h2>OJT Hour Tracker</h2>
+
+    <div class="summary-grid">
+        <div class="stat-card">Total Done <span id="total-val">0</span></div>
+        <div class="stat-card">Remaining <span id="remaining-val">150</span></div>
     </div>
 
-    <div class="input-group">
-        <div class="input-field">Time In <input type="time" id="time-in"></div>
-        <div class="input-field">Time Out <input type="time" id="time-out"></div>
-    </div>
-    <button onclick="addEntry()">Log Daily Hours</button>
-
-    <div class="projection" id="finish-prediction">
-        Enter your first record to see projected finish date.
+    <div class="progress-container">
+        <div id="progress-bar" class="progress-bar"></div>
     </div>
 
-    <div class="log" id="history-log"></div>
-    <button onclick="clearData()" style="background:#dc3545; margin-top: 20px; font-size: 0.7rem; padding: 5px;">Clear All Data</button>
+    <div class="projection-alert" id="finish-prediction">
+        Enter logs to calculate your estimated finish date.
+    </div>
+
+    <div class="input-section">
+        <div class="form-row">
+            <label>Work Date</label>
+            <input type="date" id="work-date">
+        </div>
+        <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+            <div class="form-row" style="flex:1">
+                <label>Time In</label>
+                <input type="time" id="time-in">
+            </div>
+            <div class="form-row" style="flex:1">
+                <label>Time Out</label>
+                <input type="time" id="time-out">
+            </div>
+        </div>
+        <button onclick="addLog()">Log Work Hours</button>
+    </div>
+
+    <div class="history-container">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Shift</th>
+                    <th>Net (Hrs)</th>
+                </tr>
+            </thead>
+            <tbody id="log-body"></tbody>
+        </table>
+    </div>
+
+    <button onclick="resetData()" class="clear-btn">Clear All Records</button>
 </div>
 
 <script>
-    const GOAL = 150;
-    const DAILY_WORK_HRS = 8;
-    let records = JSON.parse(localStorage.getItem('ojt_logs')) || [];
+    const GOAL_HOURS = 150;
+    const DAILY_TARGET = 8;
+    let logs = JSON.parse(localStorage.getItem('ojt_tracker_v2')) || [];
 
-    function calculateFinishDate(remainingHrs) {
-        if (remainingHrs <= 0) return "Completed!";
-        let daysNeeded = Math.ceil(remainingHrs / DAILY_WORK_HRS);
-        let date = new Date();
-        let addedDays = 0;
-        
-        while (addedDays < daysNeeded) {
-            date.setDate(date.getDate() + 1);
-            if (date.getDay() !== 0 && date.getDay() !== 6) { // Skip Sat (6) and Sun (0)
-                addedDays++;
+    // Set default date to today
+    document.getElementById('work-date').valueAsDate = new Date();
+
+    function calculateProjectedDate(remaining) {
+        if (remaining <= 0) return "Requirement Met!";
+        let workDaysNeeded = Math.ceil(remaining / DAILY_TARGET);
+        let current = new Date();
+        let added = 0;
+
+        while (added < workDaysNeeded) {
+            current.setDate(current.getDate() + 1);
+            // Skip Sat (6) and Sun (0)
+            if (current.getDay() !== 0 && current.getDay() !== 6) {
+                added++;
             }
         }
-        return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        return `<strong>Estimated Completion:</strong><br>${current.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
     }
 
-    function updateUI() {
-        let total = records.reduce((sum, r) => sum + r.duration, 0);
-        let remaining = Math.max(0, GOAL - total);
-        
-        document.getElementById('total-hrs').innerText = total.toFixed(2);
-        document.getElementById('remaining-text').innerText = `Remaining: ${remaining.toFixed(2)} hours`;
-        document.getElementById('progress-fill').style.width = (Math.min(total / GOAL, 1) * 100) + "%";
-        
-        document.getElementById('finish-prediction').innerHTML = `<strong>Projected Finish:</strong><br>${calculateFinishDate(remaining)}`;
+    function updateDisplay() {
+        let total = logs.reduce((sum, item) => sum + item.hours, 0);
+        let remaining = Math.max(0, GOAL_HOURS - total);
 
-        let logHTML = "";
-        records.slice().reverse().forEach(r => {
-            logHTML += `<div class="log-item"><span>${r.date}</span><span>${r.in}-${r.out}</span><strong>${r.duration.toFixed(2)} hrs</strong></div>`;
+        document.getElementById('total-val').innerText = total;
+        document.getElementById('remaining-val').innerText = remaining;
+        document.getElementById('progress-bar').style.width = Math.min((total / GOAL_HOURS) * 100, 100) + "%";
+        document.getElementById('finish-prediction').innerHTML = calculateProjectedDate(remaining);
+
+        let body = document.getElementById('log-body');
+        body.innerHTML = "";
+        logs.slice().reverse().forEach((log, index) => {
+            let row = `<tr>
+                <td>${log.date}</td>
+                <td>${log.in} - ${log.out}</td>
+                <td><strong>${log.hours}</strong></td>
+            </tr>`;
+            body.innerHTML += row;
         });
-        document.getElementById('history-log').innerHTML = logHTML;
     }
 
-    function addEntry() {
+    function addLog() {
+        let dateVal = document.getElementById('work-date').value;
         let tIn = document.getElementById('time-in').value;
         let tOut = document.getElementById('time-out').value;
-        if (!tIn || !tOut) return alert("Please set both Time In and Time Out");
 
-        let start = new Date(`2026-01-01 ${tIn}`);
-        let end = new Date(`2026-01-01 ${tOut}`);
-        let diff = (end - start) / (1000 * 60 * 60); // Convert ms to hours
+        if (!dateVal || !tIn || !tOut) return alert("Please fill in all fields.");
 
-        if (diff <= 0) return alert("Time Out must be later than Time In");
+        let start = new Date(`2000-01-01 ${tIn}`);
+        let end = new Date(`2000-01-01 ${tOut}`);
+        
+        // Calculate gross hours
+        let diffMs = end - start;
+        if (diffMs <= 0) return alert("Time Out must be later than Time In.");
 
-        records.push({
-            date: new Date().toLocaleDateString(),
+        let grossHours = diffMs / (1000 * 60 * 60);
+        
+        // Deduct 1 hour for lunch and round to whole number
+        let netHours = Math.round(grossHours - 1);
+        if (netHours < 0) netHours = 0;
+
+        logs.push({
+            date: dateVal,
             in: tIn,
             out: tOut,
-            duration: diff
+            hours: netHours
         });
 
-        localStorage.setItem('ojt_logs', JSON.stringify(records));
-        updateUI();
+        localStorage.setItem('ojt_tracker_v2', JSON.stringify(logs));
+        updateDisplay();
+        
+        // Reset time inputs for next entry
+        document.getElementById('time-in').value = "";
+        document.getElementById('time-out').value = "";
     }
 
-    function clearData() { if(confirm("Delete all records?")) { records = []; localStorage.clear(); updateUI(); } }
+    function resetData() {
+        if (confirm("This will permanently delete your logs. Continue?")) {
+            logs = [];
+            localStorage.removeItem('ojt_tracker_v2');
+            updateDisplay();
+        }
+    }
 
-    updateUI();
+    updateDisplay();
 </script>
 
 </body>
