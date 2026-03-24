@@ -3,78 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>150-Hour Tracker</title>
+    <title>150-Hour OJT Tracker</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; padding: 20px; background-color: #f4f7f6; }
-        .card { background: white; padding: 2rem; border-radius: 12px; shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; border: 1px solid #ddd; }
-        h2 { color: #2c3e50; margin-top: 0; }
-        .progress-container { background: #eee; border-radius: 20px; height: 25px; width: 100%; margin: 20px 0; overflow: hidden; }
-        .progress-bar { background: #27ae60; height: 100%; width: 0%; transition: width 0.3s; }
-        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .stat-box { background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #eee; }
-        input, button { width: 100%; padding: 12px; margin-top: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { background: #2980b9; color: white; border: none; cursor: pointer; font-weight: bold; }
-        button:hover { background: #3498db; }
-        .history { margin-top: 20px; max-height: 150px; overflow-y: auto; font-size: 0.9rem; }
-        .history-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        h2 { text-align: center; color: #1a73e8; margin-bottom: 10px; }
+        .progress-box { background: #e8f0fe; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+        .progress-bar-bg { background: #ddd; border-radius: 10px; height: 12px; margin: 10px 0; overflow: hidden; }
+        .progress-fill { background: #34a853; height: 100%; width: 0%; transition: 0.5s; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        .input-field { flex: 1; display: flex; flex-direction: column; font-size: 0.8rem; }
+        input { padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
+        button { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        .projection { font-size: 0.9rem; color: #5f6368; background: #fff3e0; padding: 10px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #ff9800; }
+        .log { margin-top: 20px; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
+        .log-item { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 5px 0; border-bottom: 1px solid #fafafa; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>Hour Tracker</h2>
-    <div class="stats">
-        <div class="stat-box"><strong>Total:</strong> <br><span id="total-done">0</span> / 150</div>
-        <div class="stat-box"><strong>Remaining:</strong> <br><span id="remaining">150</span></div>
+<div class="container">
+    <h2>150-Hour Tracker</h2>
+    
+    <div class="progress-box">
+        <div><strong>Total Rendered:</strong> <span id="total-hrs">0</span> / 150 hrs</div>
+        <div class="progress-bar-bg"><div id="progress-fill" class="progress-fill"></div></div>
+        <div id="remaining-text">Remaining: 150 hours</div>
     </div>
 
-    <div class="progress-container">
-        <div id="progress-bar" class="progress-bar"></div>
+    <div class="input-group">
+        <div class="input-field">Time In <input type="time" id="time-in"></div>
+        <div class="input-field">Time Out <input type="time" id="time-out"></div>
+    </div>
+    <button onclick="addEntry()">Log Daily Hours</button>
+
+    <div class="projection" id="finish-prediction">
+        Enter your first record to see projected finish date.
     </div>
 
-    <input type="number" id="hours-input" placeholder="Enter hours (e.g. 4.5)" step="0.1">
-    <button onclick="addHours()">Add Record</button>
-    <button onclick="resetData()" style="background:#e74c3c; margin-top: 5px; font-size: 0.7rem;">Reset All</button>
-
-    <div class="history" id="history-log"></div>
+    <div class="log" id="history-log"></div>
+    <button onclick="clearData()" style="background:#dc3545; margin-top: 20px; font-size: 0.7rem; padding: 5px;">Clear All Data</button>
 </div>
 
 <script>
-    let totalGoal = 150;
-    let records = JSON.parse(localStorage.getItem('hourLogs')) || [];
+    const GOAL = 150;
+    const DAILY_WORK_HRS = 8;
+    let records = JSON.parse(localStorage.getItem('ojt_logs')) || [];
+
+    function calculateFinishDate(remainingHrs) {
+        if (remainingHrs <= 0) return "Completed!";
+        let daysNeeded = Math.ceil(remainingHrs / DAILY_WORK_HRS);
+        let date = new Date();
+        let addedDays = 0;
+        
+        while (addedDays < daysNeeded) {
+            date.setDate(date.getDate() + 1);
+            if (date.getDay() !== 0 && date.getDay() !== 6) { // Skip Sat (6) and Sun (0)
+                addedDays++;
+            }
+        }
+        return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
 
     function updateUI() {
-        let sum = records.reduce((a, b) => a + b.amount, 0);
-        document.getElementById('total-done').innerText = sum.toFixed(1);
-        document.getElementById('remaining').innerText = Math.max(0, (totalGoal - sum)).toFixed(1);
+        let total = records.reduce((sum, r) => sum + r.duration, 0);
+        let remaining = Math.max(0, GOAL - total);
         
-        let percentage = (sum / totalGoal) * 100;
-        document.getElementById('progress-bar').style.width = Math.min(percentage, 100) + "%";
+        document.getElementById('total-hrs').innerText = total.toFixed(2);
+        document.getElementById('remaining-text').innerText = `Remaining: ${remaining.toFixed(2)} hours`;
+        document.getElementById('progress-fill').style.width = (Math.min(total / GOAL, 1) * 100) + "%";
+        
+        document.getElementById('finish-prediction').innerHTML = `<strong>Projected Finish:</strong><br>${calculateFinishDate(remaining)}`;
 
         let logHTML = "";
-        records.slice().reverse().forEach(item => {
-            logHTML += `<div class="history-item"><span>${item.date}</span> <strong>${item.amount} hrs</strong></div>`;
+        records.slice().reverse().forEach(r => {
+            logHTML += `<div class="log-item"><span>${r.date}</span><span>${r.in}-${r.out}</span><strong>${r.duration.toFixed(2)} hrs</strong></div>`;
         });
         document.getElementById('history-log').innerHTML = logHTML;
     }
 
-    function addHours() {
-        let val = parseFloat(document.getElementById('hours-input').value);
-        if (isNaN(val) || val <= 0) return;
-        
-        records.push({ amount: val, date: new Date().toLocaleDateString() });
-        localStorage.setItem('hourLogs', JSON.stringify(records));
-        document.getElementById('hours-input').value = "";
+    function addEntry() {
+        let tIn = document.getElementById('time-in').value;
+        let tOut = document.getElementById('time-out').value;
+        if (!tIn || !tOut) return alert("Please set both Time In and Time Out");
+
+        let start = new Date(`2026-01-01 ${tIn}`);
+        let end = new Date(`2026-01-01 ${tOut}`);
+        let diff = (end - start) / (1000 * 60 * 60); // Convert ms to hours
+
+        if (diff <= 0) return alert("Time Out must be later than Time In");
+
+        records.push({
+            date: new Date().toLocaleDateString(),
+            in: tIn,
+            out: tOut,
+            duration: diff
+        });
+
+        localStorage.setItem('ojt_logs', JSON.stringify(records));
         updateUI();
     }
 
-    function resetData() {
-        if(confirm("Are you sure you want to clear all records?")) {
-            records = [];
-            localStorage.removeItem('hourLogs');
-            updateUI();
-        }
-    }
+    function clearData() { if(confirm("Delete all records?")) { records = []; localStorage.clear(); updateUI(); } }
 
     updateUI();
 </script>
