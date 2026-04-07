@@ -21,7 +21,7 @@
         label { font-size: 0.85rem; font-weight: bold; color: #7f8c8d; margin-bottom: 4px; }
         input { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; }
         
-        button { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; margin-bottom: 5px; }
         button:hover { background: #2980b9; }
 
         .projection-alert { background: #fef9e7; border-left: 5px solid #f1c40f; padding: 12px; border-radius: 4px; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.4; }
@@ -31,7 +31,8 @@
         .history-table td { padding: 8px; border-bottom: 1px solid #eee; }
         .history-container { max-height: 250px; overflow-y: auto; }
         
-        .clear-btn { background: #e74c3c; font-size: 0.75rem; margin-top: 20px; }
+        .update-btn { background: #27ae60; margin-top: 15px; font-size: 0.8rem; }
+        .clear-btn { background: #e74c3c; font-size: 0.75rem; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -83,27 +84,25 @@
         </table>
     </div>
 
+    <button onclick="fixExistingLogs()" class="update-btn">Sync/Fix Old Logs</button>
     <button onclick="resetData()" class="clear-btn">Clear All Records</button>
 </div>
 
 <script>
     const GOAL_HOURS = 150;
-    const DAILY_TARGET = 4; // Updated to 4 hours per day
+    const DAILY_TARGET = 4; // Target set to 4 hours per day
     let logs = JSON.parse(localStorage.getItem('ojt_tracker_v2')) || [];
 
     document.getElementById('work-date').valueAsDate = new Date();
 
     function calculateProjectedDate(remaining) {
         if (remaining <= 0) return "Requirement Met!";
-        
-        // Calculate work days needed based on 4 hours/day
         let workDaysNeeded = Math.ceil(remaining / DAILY_TARGET);
         let current = new Date();
         let added = 0;
 
         while (added < workDaysNeeded) {
             current.setDate(current.getDate() + 1);
-            // Skip Sat (6) and Sun (0)
             if (current.getDay() !== 0 && current.getDay() !== 6) {
                 added++;
             }
@@ -147,8 +146,7 @@
 
         let grossHours = diffMs / (1000 * 60 * 60);
         
-        // Use Math.floor to get the whole number without rounding up
-        // Deduct 1 hour for lunch, then floor the result
+        // FIX: Subtract 1 hour then Floor to get the whole number
         let netHours = Math.floor(grossHours - 1);
         if (netHours < 0) netHours = 0;
 
@@ -164,6 +162,28 @@
         
         document.getElementById('time-in').value = "";
         document.getElementById('time-out').value = "";
+    }
+
+    // New function to fix previously incorrectly rounded logs
+    function fixExistingLogs() {
+        if (logs.length === 0) return alert("No logs to update!");
+        
+        logs = logs.map(log => {
+            let start = new Date(`2000-01-01 ${log.in}`);
+            let end = new Date(`2000-01-01 ${log.out}`);
+            let diffMs = end - start;
+            let grossHours = diffMs / (1000 * 60 * 60);
+            let netHours = Math.floor(grossHours - 1);
+            
+            return {
+                ...log,
+                hours: netHours < 0 ? 0 : netHours
+            };
+        });
+
+        localStorage.setItem('ojt_tracker_v2', JSON.stringify(logs));
+        updateDisplay();
+        alert("Logs updated! March 30 should now show 7 hours.");
     }
 
     function resetData() {
