@@ -90,7 +90,7 @@
 
 <script>
     const GOAL_HOURS = 150;
-    const DAILY_TARGET = 4; // Target set to 4 hours per day
+    const DAILY_TARGET = 8; // CHANGED: Set to 8 hours per day
     let logs = JSON.parse(localStorage.getItem('ojt_tracker_v2')) || [];
 
     document.getElementById('work-date').valueAsDate = new Date();
@@ -107,15 +107,15 @@
                 added++;
             }
         }
-        return `<strong>Estimated Completion (4hrs/day):</strong><br>${current.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+        return `<strong>Estimated Completion (8hrs/day):</strong><br>${current.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
     }
 
     function updateDisplay() {
         let total = logs.reduce((sum, item) => sum + item.hours, 0);
         let remaining = Math.max(0, GOAL_HOURS - total);
 
-        document.getElementById('total-val').innerText = total;
-        document.getElementById('remaining-val').innerText = remaining;
+        document.getElementById('total-val').innerText = total.toFixed(1); // Show 1 decimal
+        document.getElementById('remaining-val').innerText = remaining.toFixed(1);
         document.getElementById('progress-bar').style.width = Math.min((total / GOAL_HOURS) * 100, 100) + "%";
         document.getElementById('finish-prediction').innerHTML = calculateProjectedDate(remaining);
 
@@ -131,6 +131,22 @@
         });
     }
 
+    function calculateNetHours(tIn, tOut) {
+        let start = new Date(`2000-01-01 ${tIn}`);
+        let end = new Date(`2000-01-01 ${tOut}`);
+        
+        let diffMs = end - start;
+        if (diffMs <= 0) return null;
+
+        let grossHours = diffMs / (1000 * 60 * 60);
+        
+        // LOGIC: Deduct 1 hour only if they worked more than 4 hours
+        let netHours = grossHours > 4 ? grossHours - 1 : grossHours;
+        
+        // Round to 1 decimal place (e.g., 7.5) instead of Math.floor()
+        return Math.round(netHours * 10) / 10;
+    }
+
     function addLog() {
         let dateVal = document.getElementById('work-date').value;
         let tIn = document.getElementById('time-in').value;
@@ -138,17 +154,9 @@
 
         if (!dateVal || !tIn || !tOut) return alert("Please fill in all fields.");
 
-        let start = new Date(`2000-01-01 ${tIn}`);
-        let end = new Date(`2000-01-01 ${tOut}`);
+        let netHours = calculateNetHours(tIn, tOut);
         
-        let diffMs = end - start;
-        if (diffMs <= 0) return alert("Time Out must be later than Time In.");
-
-        let grossHours = diffMs / (1000 * 60 * 60);
-        
-        // FIX: Subtract 1 hour then Floor to get the whole number
-        let netHours = Math.floor(grossHours - 1);
-        if (netHours < 0) netHours = 0;
+        if (netHours === null) return alert("Time Out must be later than Time In.");
 
         logs.push({
             date: dateVal,
@@ -164,26 +172,20 @@
         document.getElementById('time-out').value = "";
     }
 
-    // New function to fix previously incorrectly rounded logs
     function fixExistingLogs() {
         if (logs.length === 0) return alert("No logs to update!");
         
         logs = logs.map(log => {
-            let start = new Date(`2000-01-01 ${log.in}`);
-            let end = new Date(`2000-01-01 ${log.out}`);
-            let diffMs = end - start;
-            let grossHours = diffMs / (1000 * 60 * 60);
-            let netHours = Math.floor(grossHours - 1);
-            
+            let net = calculateNetHours(log.in, log.out);
             return {
                 ...log,
-                hours: netHours < 0 ? 0 : netHours
+                hours: net || 0
             };
         });
 
         localStorage.setItem('ojt_tracker_v2', JSON.stringify(logs));
         updateDisplay();
-        alert("Logs updated! March 30 should now show 7 hours.");
+        alert("Logs updated! 8-hour target applied and lunch logic fixed.");
     }
 
     function resetData() {
