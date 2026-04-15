@@ -90,7 +90,7 @@
 
 <script>
     const GOAL_HOURS = 150;
-    const DAILY_TARGET = 8; // Updated target to 8 hours
+    const DAILY_TARGET = 8; 
     let logs = JSON.parse(localStorage.getItem('ojt_tracker_v2')) || [];
 
     document.getElementById('work-date').valueAsDate = new Date();
@@ -114,8 +114,9 @@
         let total = logs.reduce((sum, item) => sum + item.hours, 0);
         let remaining = Math.max(0, GOAL_HOURS - total);
 
-        document.getElementById('total-val').innerText = total;
-        document.getElementById('remaining-val').innerText = remaining;
+        // Fixed decimals here by rounding to whole numbers
+        document.getElementById('total-val').innerText = Math.round(total);
+        document.getElementById('remaining-val').innerText = Math.round(remaining);
         document.getElementById('progress-bar').style.width = Math.min((total / GOAL_HOURS) * 100, 100) + "%";
         document.getElementById('finish-prediction').innerHTML = calculateProjectedDate(remaining);
 
@@ -146,7 +147,8 @@
 
         let grossHours = diffMs / (1000 * 60 * 60);
         
-        // LOGIC: Deduct 1 hour only if gross hours is 6 or more
+        // Use Math.floor to keep whole hours as per your preference
+        // Logic: Only deduct 1 if work is 6 hours or more
         let netHours = grossHours >= 6 ? Math.floor(grossHours - 1) : Math.floor(grossHours);
         if (netHours < 0) netHours = 0;
 
@@ -173,7 +175,6 @@
             let diffMs = end - start;
             let grossHours = diffMs / (1000 * 60 * 60);
             
-            // LOGIC: Deduct 1 hour only if gross hours is 6 or more
             let netHours = grossHours >= 6 ? Math.floor(grossHours - 1) : Math.floor(grossHours);
             
             return {
@@ -184,7 +185,7 @@
 
         localStorage.setItem('ojt_tracker_v2', JSON.stringify(logs));
         updateDisplay();
-        alert("Logs updated based on the new 6-hour lunch rule!");
+        alert("Logs updated! All decimals have been rounded down.");
     }
 
     function resetData() {
