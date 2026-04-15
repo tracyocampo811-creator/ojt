@@ -90,7 +90,7 @@
 
 <script>
     const GOAL_HOURS = 150;
-    const DAILY_TARGET = 8; // Target set to 8 hours per day
+    const DAILY_TARGET = 8; // Updated target to 8 hours
     let logs = JSON.parse(localStorage.getItem('ojt_tracker_v2')) || [];
 
     document.getElementById('work-date').valueAsDate = new Date();
@@ -107,7 +107,7 @@
                 added++;
             }
         }
-        return `<strong>Estimated Completion (4hrs/day):</strong><br>${current.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+        return `<strong>Estimated Completion (8hrs/day):</strong><br>${current.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
     }
 
     function updateDisplay() {
@@ -146,9 +146,10 @@
 
         let grossHours = diffMs / (1000 * 60 * 60);
         
-        // LOGIC: Deduct 1 hour only if they worked more than 4 hours
-        let netHours = grossHours > 4 ? grossHours - 1 : grossHours;
-        
+        // LOGIC: Deduct 1 hour only if gross hours is 6 or more
+        let netHours = grossHours >= 6 ? Math.floor(grossHours - 1) : Math.floor(grossHours);
+        if (netHours < 0) netHours = 0;
+
         logs.push({
             date: dateVal,
             in: tIn,
@@ -163,7 +164,6 @@
         document.getElementById('time-out').value = "";
     }
 
-    // New function to fix previously incorrectly rounded logs
     function fixExistingLogs() {
         if (logs.length === 0) return alert("No logs to update!");
         
@@ -172,7 +172,9 @@
             let end = new Date(`2000-01-01 ${log.out}`);
             let diffMs = end - start;
             let grossHours = diffMs / (1000 * 60 * 60);
-            let netHours = Math.floor(grossHours - 1);
+            
+            // LOGIC: Deduct 1 hour only if gross hours is 6 or more
+            let netHours = grossHours >= 6 ? Math.floor(grossHours - 1) : Math.floor(grossHours);
             
             return {
                 ...log,
@@ -182,7 +184,7 @@
 
         localStorage.setItem('ojt_tracker_v2', JSON.stringify(logs));
         updateDisplay();
-        alert("Logs updated! March 30 should now show 7 hours.");
+        alert("Logs updated based on the new 6-hour lunch rule!");
     }
 
     function resetData() {
